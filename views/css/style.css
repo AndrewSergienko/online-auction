@@ -1,0 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
+
+
+body{
+    width: 100%;
+    margin: 0;
+    background: #24292e;
+}
+
+.logo{
+    font-family: 'Pacifico', cursive;
+    margin-left: 20px;
+    font-size: 40px;
+    background: linear-gradient(to right, #ff6e7f, #bfe9ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.main-content{
+    padding: 0 20%;
+}
+.header{
+    height: 50px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.menu{
+    display: flex;
+    justify-content: space-between;
+}
+.lot{
+    padding: 1%;
+    border-radius: 20px;
+    border: 2px solid;
+    max-height: 125px;
+    height: 15%;
+    display: flex;
+    text-overflow: ellipsis;
+    margin-bottom: 20px;
+}
+
+.began{
+    border-color: #3df556;
+}
+.over{
+    border-color: #ff2727;
+}
+.didnt-start{
+    border-color: #ff9925;
+}
+
+
+.lot img{
+    width: 15%;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-right: 2%;
+}
+
+.lot h2 {
+    font-size: 30px;
+}
+
+h2, p{
+    color: white;
+    font-family: "Roboto", sans-serif;
+    margin: 0;
+}
+.text{
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.text p{
+    text-overflow: ellipsis;
+}
+.lot-info{
+    width: 100%;
+    position:relative;
+    margin: 0 auto;
+}
+.lot-header{
+    display: flex;
+    justify-content: center;
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+    border-bottom-color: white;
+}
+.lot-header p {
+    border-style: solid;
+    border-color: #18bb2e;
+    border-width: 2px;
+    border-radius: 50px;
+    margin: auto 0;
+    padding: 5px;
+    color: #18bb2e;
+}
+.seller{
+    margin-top: 7%;
+}
+.lot-footer{
+    width: 90%;
+    display: flex;
+    position: absolute;
+    bottom: 0px;
+    justify-content: space-between;
+}
+.lot-header span {
+    display: flex;
+}
+.price{
+    text-align: center;
+    font-size: 50px;
+}
+
+.lot-header a {
+  font-weight: 700;
+  text-decoration: none;
+  padding: .8em 1em calc(.8em + 3px);
+  border-radius: 3px;
+  background: rgb(64,199,129);
+  box-shadow: 0 -3px rgb(53,167,110) inset;
+  transition: 0.2s;
+}
+
+.lot-header a:hover { background: rgb(53, 167, 110); }
+
+.lot-header a:active {
+  background: rgb(33,147,90);
+  box-shadow: 0 3px rgb(33,147,90) inset;
+}
