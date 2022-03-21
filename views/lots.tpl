@@ -9,7 +9,7 @@
         % end
 
         % if lot.picture_path:
-            <img src="media/{{lot.picture_path}}">
+            <img src="media/lots/{{lot.picture_path}}/1.jpg">
         % else:
             <img src="media/{{default_picture}}">
         % end

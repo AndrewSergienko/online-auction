@@ -34,7 +34,7 @@ def server_static(static):
     return static_file(static, root='views/css/')
 
 
-@route('/media/<media>')
+@route('/media/<media:path>')
 def server_media(media):
     return static_file(media, root='media/')
 
