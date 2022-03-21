@@ -4,6 +4,9 @@ from models import Lot
 from datetime import datetime
 from sqlite3 import OperationalError
 
+from redis import Redis
+redis = Redis(host='localhost', port=6379, db=0)
+
 
 @route('/')
 def dashboard():
