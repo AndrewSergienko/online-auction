@@ -102,13 +102,16 @@ class Lot(Model):
 class User(Model):
     table_name = 'users'
 
-    def __init__(self, args_dict=None, first_name=None, last_name=None, phone_number=None):
+    def __init__(self, args_dict=None, firstname=None, lastname=None, phone_number=None):
         if args_dict and type(args_dict) == sqlite3.Row:
             self.__dict__.update(args_dict)
         else:
-            self.first_name = first_name
-            self.last_name = last_name
+            self.firstname = firstname
+            self.lastname = lastname
             self.phone_number = phone_number
+
+    def __str__(self):
+        return f"{self.firstname} {self.lastname}"
 
 
 table_classes = {
