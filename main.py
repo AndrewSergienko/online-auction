@@ -41,7 +41,7 @@ def server_media(media):
 
 @error(404)
 def error_404(error):
-    return 'Сторінка не найдена :('
+    return template('404.tpl')
 
 
 def get_or_404(cls, **kwargs):
