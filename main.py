@@ -1,11 +1,22 @@
-from bottle import route, run, template, static_file, error, abort
+import os
+from bottle import route, run, template, static_file, error, abort, request, auth_basic, SimpleTemplate, hook
+
 from models import Lot
 
 from datetime import datetime
 from sqlite3 import OperationalError
 
-from redis import Redis
-redis = Redis(host='localhost', port=6379, db=0)
+# from redis import Redis
+# redis = Redis(host='localhost', port=6379, db=0)
+
+
+@hook('before_request')
+def _context_processor():
+    SimpleTemplate.defaults['request'] = request
+
+
+def check_auth(user, pw):
+    pass
 
 
 @route('/')
@@ -28,16 +39,18 @@ def create_time_object(lot: Lot):
 @route('/lot/<lot_id>')
 def lot_info(lot_id):
     lot = get_or_404(Lot, id=lot_id)
-    context = {'lot': lot}
+    dirname = f'media/lots/{lot.picture_path}'
+    pictures = os.listdir(dirname)
+    context = {'lot': lot, 'pictures': pictures}
     return template('lot_info.tpl', context)
 
 
-@route('/css/<static:path>', name='static')
+@route('/static/<static:path>', name='static')
 def server_static(static):
-    return static_file(static, root='views/css/')
+    return static_file(static, root='views/static/')
 
 
-@route('/media/<media:path>')
+@route('/media/<media:path>', name='media')
 def server_media(media):
     return static_file(media, root='media/')
 

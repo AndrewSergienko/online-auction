@@ -62,9 +62,9 @@ class Model:
             # or__condition -> ... OR condition
             # префіксний вираз не потрібно лиш вказувати в первому параметрі.
             if '__' in key:
-                oper = 'or__' if 'or__' in key else 'and__'
-                clear_key = key.replace(oper, "")
-                condition += f' OR {clear_key}={kwargs[key]}'
+                oper = 'OR' if 'or__' in key else 'AND'
+                clear_key = key.replace('or__', "").replace('and__', '')
+                condition += f' {oper} {clear_key}={kwargs[key]}'
             else:
                 condition += f"{key}={kwargs[key]}"
 

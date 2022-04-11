@@ -132,3 +132,14 @@ h2, p{
   background: rgb(33,147,90);
   box-shadow: 0 3px rgb(33,147,90) inset;
 }
+.lot-title{
+    text-align: center;
+    font-size: 50px;
+    margin-bottom: 30px;
+}
+.lot-info p{
+    font-size: 20px;
+}
+.lot-price{
+    font-size: 50px !important;
+}
