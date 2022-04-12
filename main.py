@@ -1,7 +1,9 @@
 import os
-from bottle import route, run, template, static_file, error, abort, request, auth_basic, SimpleTemplate, hook
+from bottle import template, static_file, abort, request, SimpleTemplate, redirect, \
+    Bottle
 
-from models import Lot
+from models import Lot, User
+from bottle_login import LoginPlugin
 
 from datetime import datetime
 from sqlite3 import OperationalError
@@ -9,34 +11,65 @@ from sqlite3 import OperationalError
 # from redis import Redis
 # redis = Redis(host='localhost', port=6379, db=0)
 
+app = Bottle()
+app.config['SECRET_KEY'] = 'secret'
+login = app.install(LoginPlugin())
 
-@hook('before_request')
+
+@app.hook('before_request')
 def _context_processor():
     SimpleTemplate.defaults['request'] = request
 
 
-def check_auth(user, pw):
-    pass
+@app.route('/register', method='GET')
+@app.route('/register', method='POST')
+def register():
+    if request.method == 'POST':
+        user = User(**request.forms)
+        user.set_password(request.forms['password'])
+        user.save()
+        redirect('/login')
+    return template('register.tpl')
 
 
-@route('/')
+@app.route('/login', method='GET')
+@app.route('/login', method='POST')
+def signin():
+    if request.method == 'POST':
+        user = User.get(username=request.forms['username'])
+        if not user:
+            return 'User don\'t exist'
+        if not user.check_password(request.forms['password']):
+            return 'Password is not correct'
+        login.login_user(user.id)
+        return 'Success'
+    return template('login.tpl')
+
+
+@app.route('/logout')
+def signout():
+    login.logout_user()
+    redirect('/login')
+
+
+@login.load_user
+def load_user_by_id(user_id):
+    user = User.get(id=user_id)
+    return user
+
+
+@app.route('/')
 def dashboard():
+    print(login.get_user())
     now = datetime.now()
     lots = Lot.all()
-    lots = list(map(create_time_object, lots))
     context = {'default_picture': 'no_image.jpg',
                'lots': lots,
                'now': now}
     return template('lots.tpl', context)
 
 
-def create_time_object(lot: Lot):
-    lot.start_object_time = datetime.strptime(f"{lot.start_date} {lot.start_time}", "%d.%m.%Y %H:%M")
-    lot.end_object_time = datetime.strptime(f"{lot.end_date} {lot.end_time}", "%d.%m.%Y %H:%M")
-    return lot
-
-
-@route('/lot/<lot_id>')
+@app.route('/lot/<lot_id>')
 def lot_info(lot_id):
     lot = get_or_404(Lot, id=lot_id)
     dirname = f'media/lots/{lot.picture_path}'
@@ -45,17 +78,17 @@ def lot_info(lot_id):
     return template('lot_info.tpl', context)
 
 
-@route('/static/<static:path>', name='static')
+@app.route('/static/<static:path>', name='static')
 def server_static(static):
     return static_file(static, root='views/static/')
 
 
-@route('/media/<media:path>', name='media')
+@app.route('/media/<media:path>', name='media')
 def server_media(media):
     return static_file(media, root='media/')
 
 
-@error(404)
+@app.error(404)
 def error_404(error):
     return template('404.tpl')
 
@@ -68,4 +101,4 @@ def get_or_404(cls, **kwargs):
         abort(404)
 
 
-run(host='localhost', port=8080)
+app.run(host='localhost', port=8080)

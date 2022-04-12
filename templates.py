@@ -4,3 +4,7 @@ class Templates:
     FROM {{ table_name }}
     {% if where_condition %} WHERE {{ where_condition }}{% endif %}
     """
+
+    insert_into = """
+    INSERT INTO {{ table_name }} ({{ fields }}) VALUES ({{ values }})
+    """

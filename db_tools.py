@@ -26,6 +26,14 @@ class Database:
         return result
 
     @classmethod
+    def insert_into(cls, context):
+        cls.open_connection()
+        tm = Template(Templates.insert_into)
+        sql_request = tm.render(context)
+        cls.cur.execute(sql_request)
+        cls.con.commit()
+
+    @classmethod
     def get_foreign_keys(cls, table_name):
         cls.open_connection()
         sql_request = f"PRAGMA foreign_key_list({table_name})"
