@@ -8,6 +8,16 @@ class Database:
     cur = None
 
     @classmethod
+    def _get_render_tm(cls, method, context):
+        tm = Template(method)
+        return tm.render(context)
+
+    @classmethod
+    def _execute_commit(cls, sql):
+        cls.cur.execute(sql)
+        cls.con.commit()
+
+    @classmethod
     def open_connection(cls):
         if not cls.con:
             cls.con = sqlite3.Connection('database.sqlite')
@@ -17,8 +27,7 @@ class Database:
     @classmethod
     def select(cls, context, fetchone=False):
         cls.open_connection()
-        tm = Template(Templates.select)
-        sql_request = tm.render(context)
+        sql_request = cls._get_render_tm(Templates.select, context)
         if fetchone:
             result = cls.cur.execute(sql_request).fetchone()
         else:
@@ -28,10 +37,15 @@ class Database:
     @classmethod
     def insert_into(cls, context):
         cls.open_connection()
-        tm = Template(Templates.insert_into)
-        sql_request = tm.render(context)
-        cls.cur.execute(sql_request)
-        cls.con.commit()
+        sql_request = cls._get_render_tm(Templates.insert_into, context)
+        cls._execute_commit(sql_request)
+        return cls.cur.lastrowid
+
+    @classmethod
+    def update(cls, context):
+        cls.open_connection()
+        sql_request = cls._get_render_tm(Templates.update, context)
+        cls._execute_commit(sql_request)
 
     @classmethod
     def get_foreign_keys(cls, table_name):

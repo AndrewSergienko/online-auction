@@ -2,3 +2,4 @@ database.sqlite
 venv
 .idea
 __pycache__
+media/lots/*

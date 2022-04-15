@@ -13,7 +13,21 @@
             <div>
                 <p id='cur-price' class="price"></p>
                 <p style="font-size: 15px">Теперішня ставка</p>
+                <img src="lot_add.tpl" >
             </div>
         </div>
     </div>
+    <script>
+        function goto_info(id){
+            window.location = '/lot/' + id
+        }
+    </script>
 </div>
+<form action="/login" method="post" class="form">
+      <div class="input-container ic1">
+        <input id="bid_num" name="bid" class="input" type="number" placeholder=" " />
+        <div class="cut"></div>
+        <label for="bid_num" class="placeholder">Cтавка</label>
+      </div>
+      <button type="text" class="submit">Зробити ставку</button>
+    </form>

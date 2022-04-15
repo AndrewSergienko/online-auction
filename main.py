@@ -1,6 +1,6 @@
 import os
 from bottle import template, static_file, abort, request, SimpleTemplate, redirect, \
-    Bottle
+    Bottle, auth_basic
 
 from models import Lot, User
 from bottle_login import LoginPlugin
@@ -21,6 +21,7 @@ def _context_processor():
     SimpleTemplate.defaults['request'] = request
 
 
+# auth/register funcs
 @app.route('/register', method='GET')
 @app.route('/register', method='POST')
 def register():
@@ -29,7 +30,7 @@ def register():
         user.set_password(request.forms['password'])
         user.save()
         redirect('/login')
-    return template('register.tpl')
+    return template('register.tpl', {'user': login.get_user()})
 
 
 @app.route('/login', method='GET')
@@ -42,8 +43,8 @@ def signin():
         if not user.check_password(request.forms['password']):
             return 'Password is not correct'
         login.login_user(user.id)
-        return 'Success'
-    return template('login.tpl')
+        redirect('/')
+    return template('login.tpl', {'user': login.get_user()})
 
 
 @app.route('/logout')
@@ -58,26 +59,43 @@ def load_user_by_id(user_id):
     return user
 
 
+# main funcs
 @app.route('/')
 def dashboard():
-    print(login.get_user())
-    now = datetime.now()
-    lots = Lot.all()
     context = {'default_picture': 'no_image.jpg',
-               'lots': lots,
-               'now': now}
+               'lots': Lot.all(),
+               'now': datetime.now(),
+               'user': login.get_user()}
     return template('lots.tpl', context)
 
 
 @app.route('/lot/<lot_id>')
 def lot_info(lot_id):
     lot = get_or_404(Lot, id=lot_id)
-    dirname = f'media/lots/{lot.picture_path}'
+    dirname = f'media/lots/{lot.id}'
     pictures = os.listdir(dirname)
-    context = {'lot': lot, 'pictures': pictures}
+    context = {'lot': lot, 'pictures': pictures,
+               'now': datetime.now(),
+               'user': login.get_user()}
     return template('lot_info.tpl', context)
 
 
+@app.route('/lot/add/', method='GET')
+@app.route('/lot/add/', method='POST')
+def add_lot():
+    if login.get_user():
+        if request.method == 'POST':
+            seller = login.get_user()
+            lot = Lot(seller=seller, **request.forms)
+            lot.save()
+            for file in request.files.getall('files'):
+                if 'image' in file.content_type:
+                    file.save(f'media/lots/{lot.id}')
+            redirect('/')
+        return template('lot_add.tpl', {'user': login.get_user()})
+
+
+# server funcs
 @app.route('/static/<static:path>', name='static')
 def server_static(static):
     return static_file(static, root='views/static/')
@@ -96,6 +114,8 @@ def error_404(error):
 def get_or_404(cls, **kwargs):
     try:
         obj = cls.get(**kwargs)
+        if obj is None:
+            abort(404)
         return obj
     except OperationalError:
         abort(404)

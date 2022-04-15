@@ -8,3 +8,9 @@ class Templates:
     insert_into = """
     INSERT INTO {{ table_name }} ({{ fields }}) VALUES ({{ values }})
     """
+
+    update = """
+    UPDATE {{ table_name }}
+    SET {{ data }}
+    WHERE {{ where_condition }}
+    """

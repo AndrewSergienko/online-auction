@@ -15,6 +15,9 @@ class Model:
     # Поля моделі, які будуть ініціалізовані в конструкторі класів нащадків
     fields = []
 
+    # FK поля моделі, які можуть бути None
+    none_fk_fields = []
+
     def __init__(self, **kwargs):
         for field in type(self).fields:
             # if field in kwargs.keys():
@@ -45,7 +48,7 @@ class Model:
         # і сетить їх об'єкту головної моделі
 
         # Знаходить всі зовнішні ключі таблиці.
-        f_keys = Database.get_foreign_keys(cls.table_name)
+        f_keys = cls._get_fk_fields()
 
         for key in f_keys:
             # f_keys отримується за допомогою запросу PRAGMA foreign_key_list(<Таблиця>), який повертає такі дані:
@@ -58,6 +61,9 @@ class Model:
             fk_class = table_classes[key['table']]
             row_name = key['from']
             reference_name = key['to']
+            value = model_object.__dict__[row_name]
+            if model_object.__dict__[row_name] == 'None':
+                continue
             # Отримується рядок таблиці-джерела по умові співпадіння зі значенням поля
             row_value = Database.select({'table_name': key['table'],
                                          'where_condition': f'{reference_name}={model_object.__dict__[row_name]}'},
@@ -65,6 +71,10 @@ class Model:
             # Клас Model наслідується класами, в конструкторі яких є варіант з update'ом словника властивостей
             # Тому, можна передавати параметром словник при створенні об'єкта
             model_object.__dict__[row_name] = fk_class(**row_value)
+
+    @classmethod
+    def _get_fk_fields(cls):
+        return Database.get_foreign_keys(cls.table_name)
 
     @classmethod
     def get(cls, **kwargs):
@@ -88,32 +98,86 @@ class Model:
         # Database.select поверне словник полів одного рядку, це забеспечує параметер fetchone
         # Клас Model наслідується класами, в конструкторі яких є варіант з update'ом словника властивостей
         # Тому, можна передавати параметром словник при створенні об'єкта.
-        model_object = cls(**Database.select(context, fetchone=True))
+        result = Database.select(context, fetchone=True)
+        if not result:
+            return
+        model_object = cls(**result)
         # Засетить об'єкти рядку класів, з якими пов'язані зовнішні ключі
         cls.set_fk_fields(model_object)
         return model_object
 
+    def _get_cleaned_fields(self):
+        self_dict = dict(self.__dict__)
+        if "id" in self_dict:
+            # Поле id використовується в готових записаних об'єктах. А при запису, бд сама підставить id
+            del self_dict['id']
+
+        # Видалення додаткових полів, які не зберігаються в бд
+        for key in self.__dict__.keys():
+            if key not in type(self).fields:
+                del self_dict[key]
+
+        return self_dict
+
     def save(self):
+        cf = self._get_cleaned_fields()
+        f_keys = type(self)._get_fk_fields()
+        for key in f_keys:
+            if key['from'] in type(self).none_fk_fields:
+                continue
+            # Перезаписує поле об'єкта, замінюючи об'єкт FK моделі на її поле, до якого прив'язаний ключ
+            # Це зроблено для того, щоб привести дані у валідну форму для запису в бд
+            print(key['from'])
+            cf[key['from']] = cf[key['from']].__dict__[key['to']]
         context = {
             'table_name': type(self).table_name,
-            'fields': ", ".join(self.__dict__.keys()),
-            'values': ", ".join(map(lambda x: f'\'{x}\'', self.__dict__.values()))
+            'fields': ", ".join(cf.keys()),
+            'values': ", ".join(map(lambda x: f'\'{x}\'', cf.values()))
         }
-        Database.insert_into(context)
+        self.id = Database.insert_into(context)
+
+    def update(self, **kwargs):
+        if self.id:
+            condition = f'id={self.id}'
+        else:
+            cf = self._get_cleaned_fields()
+            condition = ", ".join([f"{key}={cf[key]}" for key in cf.keys()])
+
+        context = {
+            'table_name': type(self).table_name,
+            'data': ", ".join([f"{key}={kwargs[key]}" for key in kwargs.keys()]),
+            'where_condition': condition
+        }
+        Database.update(context)
+
+    def __eq__(self, other):
+        return self.id == other.id
 
 
 class Lot(Model):
     table_name = 'lots'
-    fields = ['id', 'seller', 'title', 'description', 'min_bid', 'cur_bid', 'cur_buyer', 'start_time', 'start_date',
-              'end_time', 'end_date', 'picture_path']
+    fields = ['id', 'seller', 'title', 'description', 'min_bid', 'cur_bid', 'cur_buyer', 'start_date',
+              'end_date']
+    none_fk_fields = ['cur_buyer']
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.create_time_object()
+        self.set_avatar_path()
 
     def create_time_object(self):
-        self.start_object_time = datetime.strptime(f"{self.start_date} {self.start_time}", "%d.%m.%Y %H:%M")
-        self.end_object_time = datetime.strptime(f"{self.end_date} {self.end_time}", "%d.%m.%Y %H:%M")
+        self.start_object_time = datetime.strptime(self.start_date, "%Y-%m-%dT%H:%M")
+        self.end_object_time = datetime.strptime(self.end_date, "%Y-%m-%dT%H:%M")
+
+    def set_avatar_path(self):
+        try:
+            self.avatar = os.listdir(f'media/lots/{self.id}')[0]
+        except (FileNotFoundError, IndexError):
+            self.avatar = None
+
+    def save(self):
+        super().save()
+        os.mkdir(f'media/lots/{self.id}')
 
 
 class User(Model):
